@@ -62,8 +62,8 @@ const sessions = new Map();
 // ADMIN CHECK
 // ============================================================
 
-const isAdmin = id =>
-  adminIds.has(String(id));
+const isAdmin =
+  id => adminIds.has(String(id));
 
 
 // ============================================================
@@ -74,7 +74,7 @@ const nativeMenuCommands = [
 
   {
     command: "ask",
-    description: "🧠 Ask NIVA anything"
+    description: "🧠 Ask NIVA"
   },
 
   {
@@ -89,7 +89,7 @@ const nativeMenuCommands = [
 
   {
     command: "mains",
-    description: "✍️ Mains Answer Help"
+    description: "✍️ Mains Answer"
   },
 
   {
@@ -124,7 +124,7 @@ const nativeMenuCommands = [
 
   {
     command: "start",
-    description: "🏠 Main / Welcome"
+    description: "🏠 Start NIVA"
   }
 
 ];
@@ -144,6 +144,127 @@ Namaste, ${name}! 👋
 Main NIVA hoon — concept samjhaungi, PYQ traps pakdaungi, revision karwaungi… aur zarurat padi toh thoda roast bhi. 😏
 
 Aaj padhai karni hai ya excuses ka viva dena hai? 😂`;
+}
+
+
+// ============================================================
+// CHECK GROUP
+// ============================================================
+
+function isGroup(ctx) {
+
+  return (
+    ctx.chat?.type === "group" ||
+    ctx.chat?.type === "supergroup"
+  );
+}
+
+
+// ============================================================
+// CHECK WHETHER NIVA WAS MENTIONED
+// ============================================================
+
+function isNivaMentioned(ctx) {
+
+  const message =
+    ctx.message;
+
+  if (!message) {
+    return false;
+  }
+
+  const text =
+    message.text ||
+    message.caption ||
+    "";
+
+  const entities =
+    message.entities ||
+    message.caption_entities ||
+    [];
+
+
+  // ----------------------------------------------------------
+  // Telegram @mention / text_mention
+  // ----------------------------------------------------------
+
+  for (const entity of entities) {
+
+    if (
+      entity.type === "mention"
+    ) {
+
+      const mention =
+        text.substring(
+          entity.offset,
+          entity.offset + entity.length
+        );
+
+      if (
+        mention
+          .toLowerCase()
+          .includes("niva")
+      ) {
+        return true;
+      }
+    }
+
+
+    if (
+      entity.type === "text_mention"
+    ) {
+
+      if (
+        entity.user &&
+        entity.user.id === bot.botInfo?.id
+      ) {
+
+        return true;
+
+      }
+    }
+
+  }
+
+
+  // ----------------------------------------------------------
+  // Plain "NIVA" mention
+  // ----------------------------------------------------------
+
+  return /\bniva\b/i.test(text);
+}
+
+
+// ============================================================
+// CHECK WHETHER MESSAGE REPLIES TO NIVA
+// ============================================================
+
+function isReplyToNiva(ctx) {
+
+  const reply =
+    ctx.message?.reply_to_message;
+
+  if (!reply) {
+    return false;
+  }
+
+  return (
+    reply.from?.id ===
+    bot.botInfo?.id
+  );
+}
+
+
+// ============================================================
+// GROUP MESSAGE IS RELEVANT
+// ============================================================
+
+function shouldNivaReplyInGroup(ctx) {
+
+  return (
+    isNivaMentioned(ctx) ||
+    isReplyToNiva(ctx)
+  );
 }
 
 
@@ -183,7 +304,7 @@ bot.start(async ctx => {
 
 
 // ============================================================
-// ADMIN COMMAND
+// ADMIN
 // ============================================================
 
 bot.command(
@@ -191,19 +312,21 @@ bot.command(
   async ctx => {
 
     if (!isAdmin(ctx.from.id)) {
+
       return ctx.reply(
         "Access denied."
       );
+
     }
 
     return ctx.reply(
       "NIVA Commands\n\n" +
 
-      "/start - Main menu\n" +
+      "/start - Start NIVA\n" +
       "/ask - Ask NIVA\n" +
       "/practice - Practice MCQs\n" +
       "/currentaffairs - Current Affairs\n" +
-      "/mains - Mains\n" +
+      "/mains - Mains Answer\n" +
       "/study - Study Room\n" +
       "/daily - Daily Challenge\n" +
       "/progress - Progress\n" +
@@ -264,12 +387,10 @@ bot.command(
 
     ctx.reply(
       "📰 CURRENT AFFAIRS\n\n" +
-
       "Yearly CA\n" +
       "Monthly CA\n" +
       "Bihar CA\n\n" +
-
-      "Verified CA question bank integration will be connected here."
+      "CA question bank integration will be connected here."
     );
 
   }
@@ -277,7 +398,7 @@ bot.command(
 
 
 // ============================================================
-// MAINS COMMAND
+// MAINS
 // ============================================================
 
 bot.command(
@@ -294,7 +415,7 @@ bot.command(
     ctx.reply(
       "✍️ MAINS MODE\n\n" +
 
-      "Apna handwritten BPSC/UPSC Mains answer ka clear photo bhejo.\n\n" +
+      "Apna handwritten BPSC/UPSC Mains answer ka clear photo bhejo. 📸\n\n" +
 
       "NIVA check karegi:\n" +
       "• Content\n" +
@@ -303,9 +424,9 @@ bot.command(
       "• Examples\n" +
       "• Conclusion\n" +
       "• Presentation\n" +
-      "• Approximate word count\n\n" +
+      "• Word count\n\n" +
 
-      "📸 Poora answer ek clear frame mein bhejna."
+      "Poora answer clear frame mein bhejna."
     );
 
   }
@@ -313,7 +434,7 @@ bot.command(
 
 
 // ============================================================
-// STUDY ROOM
+// STUDY
 // ============================================================
 
 bot.command(
@@ -333,7 +454,7 @@ bot.command(
       "Polity • History • Geography • Economy • Science • " +
       "Bihar Special • Current Affairs\n\n" +
 
-      "Topic bhejo. NIVA padhayegi."
+      "Topic bhejo. NIVA samjhaungi."
     );
 
   }
@@ -350,11 +471,9 @@ bot.command(
 
     ctx.reply(
       "🔥 DAILY CHALLENGE\n\n" +
-
       "5 questions.\n" +
       "One topic.\n" +
       "Zero excuses. 😏\n\n" +
-
       "Ready?",
 
       Markup.inlineKeyboard([
@@ -409,7 +528,7 @@ ${
       );
 
       ctx.reply(
-        "Progress load nahi ho paaya. Thodi der baad try karo."
+        "Progress load nahi ho paaya."
       );
 
     }
@@ -464,7 +583,6 @@ bot.command(
 
       await ctx.reply(
         `🧠 REVISION BANK\n\n${q.question}`,
-
         Markup.inlineKeyboard(
           buttons
         )
@@ -546,15 +664,26 @@ bot.command(
 
 
 // ============================================================
-// HANDWRITTEN MAINS PHOTO
+// GROUP PHOTO
 // ============================================================
 
 bot.on(
   "photo",
   async ctx => {
 
+    if (
+      isGroup(ctx) &&
+      !shouldNivaReplyInGroup(ctx)
+    ) {
+      return;
+    }
+
     const id =
       ctx.from.id;
+
+    const session =
+      sessions.get(id);
+
 
     try {
 
@@ -566,19 +695,29 @@ bot.on(
         );
 
 
-      // If user has explicitly entered Mains mode
-      // evaluate the image as a Mains answer.
+      // In groups, photo must explicitly trigger NIVA.
+      // In private chats, /mains activates image evaluation.
 
-      const session =
-        sessions.get(id);
-
-
-      if (session?.mode !== "mains") {
+      if (
+        session?.mode !== "mains" &&
+        isGroup(ctx)
+      ) {
 
         await ctx.reply(
-          "📸 Photo received.\n\n" +
-          "Agar ye handwritten Mains answer hai, pehle /mains bhejo, " +
-          "phir answer ka clear photo upload karo."
+          "📸 Haan, photo dekh rahi hoon. 😄\n\n" +
+          "Agar ye Mains answer hai, /mains likho aur photo bhejo."
+        );
+
+        return;
+      }
+
+
+      if (
+        session?.mode !== "mains"
+      ) {
+
+        await ctx.reply(
+          "📸 Agar ye handwritten Mains answer hai, pehle /mains bhejo."
         );
 
         return;
@@ -593,20 +732,6 @@ bot.on(
       const photos =
         ctx.message.photo;
 
-
-      if (
-        !photos ||
-        !photos.length
-      ) {
-
-        return ctx.reply(
-          "📸 Image nahi mili. Dobara upload karo."
-        );
-
-      }
-
-
-      // Highest available Telegram resolution
 
       const photo =
         photos[
@@ -651,7 +776,7 @@ bot.on(
 
       await ctx.reply(
         "📸 Answer mil gaya.\n\n" +
-        "NIVA handwriting padh rahi hai aur answer evaluate kar rahi hai... ✍️🧠"
+        "NIVA handwriting padh rahi hoon aur answer evaluate kar rahi hoon... ✍️🧠"
       );
 
 
@@ -672,22 +797,36 @@ bot.on(
       sessions.delete(id);
 
 
-      await ctx.reply(
-        evaluation
-      );
+      if (isGroup(ctx)) {
+
+        await ctx.reply(
+          evaluation,
+          {
+            reply_to_message_id:
+              ctx.message.message_id
+          }
+        );
+
+      } else {
+
+        await ctx.reply(
+          evaluation
+        );
+
+      }
 
 
     } catch (error) {
 
       console.error(
-        "Mains image evaluation error:",
+        "Mains image error:",
         error
       );
 
 
       await ctx.reply(
         "📸 Answer image read karne mein problem aa gayi.\n\n" +
-        "Clear photo, proper lighting aur poora answer frame mein bhejo."
+        "Clear photo aur proper lighting ke saath dobara bhejo."
       );
 
     }
@@ -697,7 +836,7 @@ bot.on(
 
 
 // ============================================================
-// NORMAL TEXT / AI
+// NORMAL TEXT
 // ============================================================
 
 bot.on(
@@ -711,8 +850,25 @@ bot.on(
       ctx.message.text.trim();
 
 
-    // Commands are handled by Telegraf
-    // before reaching this handler.
+    // --------------------------------------------------------
+    // GROUP FILTER
+    // --------------------------------------------------------
+
+    if (isGroup(ctx)) {
+
+      // NIVA stays completely silent unless:
+      // 1. @NIVA is mentioned
+      // 2. "NIVA" is written
+      // 3. User replies to NIVA's message
+
+      if (
+        !shouldNivaReplyInGroup(ctx)
+      ) {
+        return;
+      }
+
+    }
+
 
     const session =
       sessions.get(id);
@@ -728,26 +884,44 @@ bot.on(
         );
 
 
-      // --------------------------------------------------------
-      // MAINS MODE
-      // --------------------------------------------------------
+      // ------------------------------------------------------
+      // MAINS TEXT
+      // ------------------------------------------------------
 
       if (
         session?.mode === "mains"
       ) {
 
-        await ctx.reply(
+        const replyText =
           "✍️ Mains mode active hai.\n\n" +
-          "Apne handwritten answer ka clear photo bhejo. 📸"
-        );
+          "Handwritten answer ka clear photo bhejo. 📸";
+
+
+        if (isGroup(ctx)) {
+
+          await ctx.reply(
+            replyText,
+            {
+              reply_to_message_id:
+                ctx.message.message_id
+            }
+          );
+
+        } else {
+
+          await ctx.reply(
+            replyText
+          );
+
+        }
 
         return;
       }
 
 
-      // --------------------------------------------------------
-      // ASK MODE
-      // --------------------------------------------------------
+      // ------------------------------------------------------
+      // ASK / NORMAL AI
+      // ------------------------------------------------------
 
       if (
         session?.mode === "ask" ||
@@ -773,11 +947,30 @@ bot.on(
           });
 
 
-        // IMPORTANT:
-        // NO MENU AFTER AI RESPONSE.
+        // ----------------------------------------------------
+        // PRIVATE CHAT
+        // ----------------------------------------------------
+
+        if (!isGroup(ctx)) {
+
+          await ctx.reply(
+            answer
+          );
+
+          return;
+        }
+
+
+        // ----------------------------------------------------
+        // GROUP
+        // ----------------------------------------------------
 
         await ctx.reply(
-          answer
+          answer,
+          {
+            reply_to_message_id:
+              ctx.message.message_id
+          }
         );
 
 
@@ -793,10 +986,28 @@ bot.on(
       );
 
 
-      await ctx.reply(
+      const errorMessage =
         "NIVA ka backend thoda chai break par chala gaya 😭\n\n" +
-        "Thodi der baad try karo."
-      );
+        "Thodi der baad try karo.";
+
+
+      if (isGroup(ctx)) {
+
+        await ctx.reply(
+          errorMessage,
+          {
+            reply_to_message_id:
+              ctx.message.message_id
+          }
+        );
+
+      } else {
+
+        await ctx.reply(
+          errorMessage
+        );
+
+      }
 
     }
 
@@ -805,7 +1016,7 @@ bot.on(
 
 
 // ============================================================
-// DAILY QUIZ START
+// DAILY QUIZ
 // ============================================================
 
 bot.action(
@@ -851,7 +1062,7 @@ bot.action(
 
         level === "unleashed"
 
-          ? "☠️ NIVA Unleashed activated.\nTumne khud choose kiya hai. 😂"
+          ? "☠️ NIVA Unleashed activated. Tumne khud choose kiya hai. 😂"
 
           : `Roast level: ${level}.`
 
@@ -920,13 +1131,11 @@ async function startQuiz(ctx) {
 
 
     await ctx.reply(
-
       `🎯 ${q.subject} — ${q.topic}\n\n${q.q}`,
 
       Markup.inlineKeyboard(
         buttons
       )
-
     );
 
 
@@ -963,9 +1172,7 @@ bot.action(
         );
 
 
-      if (
-        !session?.q
-      ) {
+      if (!session?.q) {
 
         return ctx.answerCbQuery(
           "Quiz expired. Start again."
@@ -1059,8 +1266,6 @@ bot.action(
       );
 
 
-      // NO MENU AFTER QUIZ
-
       await ctx.reply(
         msg +
         `\n\n📊 Accuracy: ${
@@ -1094,7 +1299,7 @@ bot.action(
 
 
 // ============================================================
-// GLOBAL ERROR HANDLER
+// GLOBAL ERROR
 // ============================================================
 
 bot.catch(
@@ -1117,8 +1322,50 @@ async function startBot() {
 
   try {
 
+    // Native Telegram menu.
+    // Commands can be scoped separately for private/group chats.
     await bot.telegram.setMyCommands(
-      nativeMenuCommands
+      nativeMenuCommands,
+      {
+        type: "all_private_chats"
+      }
+    );
+
+
+    await bot.telegram.setMyCommands(
+      [
+        {
+          command: "start",
+          description: "🏠 Start NIVA"
+        },
+        {
+          command: "ask",
+          description: "🧠 Ask NIVA"
+        },
+        {
+          command: "practice",
+          description: "🎯 Practice MCQs"
+        },
+        {
+          command: "mains",
+          description: "✍️ Mains Answer"
+        },
+        {
+          command: "daily",
+          description: "🔥 Daily Challenge"
+        },
+        {
+          command: "progress",
+          description: "📊 My Progress"
+        },
+        {
+          command: "revision",
+          description: "🧠 Revision Bank"
+        }
+      ],
+      {
+        type: "all_group_chats"
+      }
     );
 
 
@@ -1151,7 +1398,7 @@ startBot();
 
 
 // ============================================================
-// GRACEFUL SHUTDOWN
+// SHUTDOWN
 // ============================================================
 
 process.once(
