@@ -1,3 +1,4 @@
+import http from "http";
 import "dotenv/config";
 import { Telegraf, Markup } from "telegraf";
 import { getUser, updateUser, addAttempt, getStats } from "./storage.js";
@@ -140,3 +141,9 @@ bot.launch();
 console.log("NIVA is online.");
 process.once("SIGINT",()=>bot.stop("SIGINT"));
 process.once("SIGTERM",()=>bot.stop("SIGTERM"));
+const PORT = process.env.PORT || 3000;
+
+http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("NIVA is online.");
+}).listen(PORT, "0.0.0.0");
