@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SECRET_KEY);
 
 export async function getUser(id,name="Aspirant"){
   const {data}=await sb.from("profiles").select("*").eq("telegram_id",id).maybeSingle();
