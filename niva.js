@@ -467,3 +467,4 @@ function cleanTelegramText(text) {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
+// Deployment sync
