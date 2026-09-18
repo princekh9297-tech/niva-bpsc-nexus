@@ -430,49 +430,18 @@ ${question}
     1000
   );
 }
+
 // ============================================================
 // TELEGRAM TEXT CLEANER
 // ============================================================
 
 function cleanTelegramText(text) {
   return text
-
-    .replace(
-      /```[\s\S]*?```/g,
-      ""
-    )
-
-    .replace(
-      /^\s*#{1,6}\s*/gm,
-      ""
-    )
-
-    .replace(
-      /\*\*/g,
-      ""
-    )
-
-    .replace(
-      /__/g,
-      ""
-    )
-
-    .replace(
-      /`([^`]+)`/g,
-      "$1"
-    )
-
-    .replace(
-      /$begin:math:display$\(\[\^$end:math:display$]+)\]$begin:math:text$\[\^\)\]\+$end:math:text$/g,
-      "$1"
-    )
-
-    .replace(
-      /\n{3,}/g,
-      "\n\n"
-    )
-
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/^\s*#{1,6}\s*/gm, "")
+    .replace(/\*\*/g, "")
+    .replace(/__/g, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
-
-
-
+}
