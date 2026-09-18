@@ -22,7 +22,7 @@ function welcome(name) {
   return `✦ *N I V A* ✦\n*BPSC Nexus Tutor*\n\nNamaste, ${name}! 👋\n\nMain NIVA hoon — concept samjhaungi, PYQ traps pakdaungi, revision karwaungi… aur zarurat padi toh thoda roast bhi. 😏\n\nAaj padhai karni hai ya excuses ka viva dena hai? 😂`;
 }
 
-bot.start(ctx => {
+bot.start(async ctx => {
   const u = await getUser(ctx.from.id, ctx.from.first_name || "Aspirant");
   ctx.replyWithMarkdown(welcome(u.name), menu);
 });
