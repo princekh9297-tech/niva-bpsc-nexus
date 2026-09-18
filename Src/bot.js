@@ -1,6 +1,11 @@
 import http from "http";
 import "dotenv/config";
-import { Telegraf, Markup } from "telegraf";
+
+import {
+  Telegraf,
+  Markup
+} from "telegraf";
+
 import {
   getUser,
   updateUser,
@@ -8,22 +13,57 @@ import {
   getStats,
   getRevisionQuestion
 } from "./storage.js";
-import { askNiva } from "./niva.js";
-import { getQuestion } from "./quiz.js";
-import { ROASTS } from "./personality.js";
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+import {
+  askNiva,
+  evaluateMainsAnswer
+} from "./niva.js";
 
-const adminIds = new Set(
-  (process.env.ADMIN_IDS || "")
-    .split(",")
-    .map(x => x.trim())
-    .filter(Boolean)
-);
+import {
+  getQuestion
+} from "./quiz.js";
+
+import {
+  ROASTS
+} from "./personality.js";
+
+
+// ============================================================
+// BOT
+// ============================================================
+
+const bot =
+  new Telegraf(
+    process.env.TELEGRAM_BOT_TOKEN
+  );
+
+
+// ============================================================
+// ADMIN
+// ============================================================
+
+const adminIds =
+  new Set(
+    (process.env.ADMIN_IDS || "")
+      .split(",")
+      .map(x => x.trim())
+      .filter(Boolean)
+  );
+
+
+// ============================================================
+// SESSIONS
+// ============================================================
 
 const sessions = new Map();
 
-const isAdmin = id => adminIds.has(String(id));
+
+// ============================================================
+// ADMIN CHECK
+// ============================================================
+
+const isAdmin = id =>
+  adminIds.has(String(id));
 
 
 // ============================================================
@@ -31,17 +71,62 @@ const isAdmin = id => adminIds.has(String(id));
 // ============================================================
 
 const nativeMenuCommands = [
-  { command: "ask", description: "🧠 Ask NIVA anything" },
-  { command: "practice", description: "🎯 Practice MCQs" },
-  { command: "currentaffairs", description: "📰 Current Affairs" },
-  { command: "mains", description: "✍️ Mains Answer Help" },
-  { command: "study", description: "📚 Study Room" },
-  { command: "daily", description: "🔥 Daily Challenge" },
-  { command: "progress", description: "📊 My Progress" },
-  { command: "revision", description: "🧠 Revision Bank" },
-  { command: "roast", description: "😏 Choose Roast Level" },
-  { command: "settings", description: "⚙️ Settings" },
-  { command: "start", description: "🏠 Main / Welcome" }
+
+  {
+    command: "ask",
+    description: "🧠 Ask NIVA anything"
+  },
+
+  {
+    command: "practice",
+    description: "🎯 Practice MCQs"
+  },
+
+  {
+    command: "currentaffairs",
+    description: "📰 Current Affairs"
+  },
+
+  {
+    command: "mains",
+    description: "✍️ Mains Answer Help"
+  },
+
+  {
+    command: "study",
+    description: "📚 Study Room"
+  },
+
+  {
+    command: "daily",
+    description: "🔥 Daily Challenge"
+  },
+
+  {
+    command: "progress",
+    description: "📊 My Progress"
+  },
+
+  {
+    command: "revision",
+    description: "🧠 Revision Bank"
+  },
+
+  {
+    command: "roast",
+    description: "😏 Roast Level"
+  },
+
+  {
+    command: "settings",
+    description: "⚙️ Settings"
+  },
+
+  {
+    command: "start",
+    description: "🏠 Main / Welcome"
+  }
+
 ];
 
 
@@ -50,8 +135,9 @@ const nativeMenuCommands = [
 // ============================================================
 
 function welcome(name) {
-  return `✦ *N I V A* ✦
-*BPSC Nexus Tutor*
+
+  return `✦ N I V A ✦
+BPSC Nexus Tutor
 
 Namaste, ${name}! 👋
 
@@ -66,337 +152,688 @@ Aaj padhai karni hai ya excuses ka viva dena hai? 😂`;
 // ============================================================
 
 bot.start(async ctx => {
-  try {
-    const u = await getUser(
-      ctx.from.id,
-      ctx.from.first_name || "Aspirant"
-    );
 
-    // No inline keyboard here.
-    // Telegram's native ☰ Menu is used instead.
-    await ctx.replyWithMarkdown(
+  try {
+
+    const u =
+      await getUser(
+        ctx.from.id,
+        ctx.from.first_name ||
+        "Aspirant"
+      );
+
+    await ctx.reply(
       welcome(u.name)
     );
 
-  } catch (e) {
-    console.error("START error:", e);
+  } catch (error) {
+
+    console.error(
+      "START error:",
+      error
+    );
 
     await ctx.reply(
-      "NIVA ka welcome system thoda confuse ho gaya 😅. Ek baar /start dobara bhejo."
+      "NIVA ka welcome system thoda confuse ho gaya 😅\n\n" +
+      "Ek baar /start dobara bhejo."
     );
   }
+
 });
 
 
 // ============================================================
-// ADMIN
+// ADMIN COMMAND
 // ============================================================
 
-bot.command("admin", async ctx => {
-  if (!isAdmin(ctx.from.id)) {
-    return ctx.reply("Access denied.");
+bot.command(
+  "admin",
+  async ctx => {
+
+    if (!isAdmin(ctx.from.id)) {
+      return ctx.reply(
+        "Access denied."
+      );
+    }
+
+    return ctx.reply(
+      "NIVA Commands\n\n" +
+
+      "/start - Main menu\n" +
+      "/ask - Ask NIVA\n" +
+      "/practice - Practice MCQs\n" +
+      "/currentaffairs - Current Affairs\n" +
+      "/mains - Mains\n" +
+      "/study - Study Room\n" +
+      "/daily - Daily Challenge\n" +
+      "/progress - Progress\n" +
+      "/revision - Revision Bank\n" +
+      "/roast - Roast level\n" +
+      "/settings - Settings"
+    );
+
   }
-
-  return ctx.reply(
-    "*NIVA Commands*\n\n" +
-    "/start - Main menu\n" +
-    "/ask - Ask NIVA anything\n" +
-    "/practice - Practice MCQs\n" +
-    "/currentaffairs - Current Affairs\n" +
-    "/mains - Mains\n" +
-    "/study - Study Room\n" +
-    "/daily - Daily Challenge\n" +
-    "/progress - Your progress\n" +
-    "/revision - Revision Bank\n" +
-    "/roast - Choose roast level\n" +
-    "/settings - Settings",
-    { parse_mode: "Markdown" }
-  );
-});
+);
 
 
 // ============================================================
-// ASK NIVA
+// ASK
 // ============================================================
 
-bot.command("ask", ctx => {
-  sessions.set(ctx.from.id, {
-    mode: "ask"
-  });
+bot.command(
+  "ask",
+  ctx => {
 
-  ctx.reply(
-    "🧠 Bolo. NIVA sun rahi hai.\n\n" +
-    "Concept, PYQ, doubt, current affairs—jo hai bhejo."
-  );
-});
+    sessions.set(
+      ctx.from.id,
+      {
+        mode: "ask"
+      }
+    );
+
+    ctx.reply(
+      "🧠 Bolo. NIVA sun rahi hai.\n\n" +
+      "Concept, PYQ, doubt, current affairs—jo hai bhejo."
+    );
+
+  }
+);
 
 
 // ============================================================
 // PRACTICE
 // ============================================================
 
-bot.command("practice", ctx => {
-  startQuiz(ctx);
-});
+bot.command(
+  "practice",
+  ctx => {
+
+    startQuiz(ctx);
+
+  }
+);
 
 
 // ============================================================
 // CURRENT AFFAIRS
 // ============================================================
 
-bot.command("currentaffairs", ctx => {
-  ctx.reply(
-    "📰 CURRENT AFFAIRS\n\n" +
-    "Current Affairs module is ready for your verified CA dataset.\n\n" +
-    "Yearly CA • Monthly CA • Bihar CA\n\n" +
-    "Admin can connect the CA question bank here."
-  );
-});
+bot.command(
+  "currentaffairs",
+  ctx => {
+
+    ctx.reply(
+      "📰 CURRENT AFFAIRS\n\n" +
+
+      "Yearly CA\n" +
+      "Monthly CA\n" +
+      "Bihar CA\n\n" +
+
+      "Verified CA question bank integration will be connected here."
+    );
+
+  }
+);
 
 
 // ============================================================
-// MAINS
+// MAINS COMMAND
 // ============================================================
 
-bot.command("mains", ctx => {
-  ctx.reply(
-    "✍️ MAINS MODE\n\n" +
-    "Send a BPSC/UPSC mains answer.\n\n" +
-    "NIVA can help with:\n" +
-    "• Structure\n" +
-    "• Content\n" +
-    "• Examples\n" +
-    "• Analysis\n" +
-    "• Conclusion"
-  );
-});
+bot.command(
+  "mains",
+  ctx => {
+
+    sessions.set(
+      ctx.from.id,
+      {
+        mode: "mains"
+      }
+    );
+
+    ctx.reply(
+      "✍️ MAINS MODE\n\n" +
+
+      "Apna handwritten BPSC/UPSC Mains answer ka clear photo bhejo.\n\n" +
+
+      "NIVA check karegi:\n" +
+      "• Content\n" +
+      "• Structure\n" +
+      "• Analysis\n" +
+      "• Examples\n" +
+      "• Conclusion\n" +
+      "• Presentation\n" +
+      "• Approximate word count\n\n" +
+
+      "📸 Poora answer ek clear frame mein bhejna."
+    );
+
+  }
+);
 
 
 // ============================================================
 // STUDY ROOM
 // ============================================================
 
-bot.command("study", ctx => {
-  ctx.reply(
-    "📚 STUDY ROOM\n\n" +
-    "Polity • History • Geography • Economy • Science • " +
-    "Bihar Special • Current Affairs\n\n" +
-    "Tell NIVA a subject or topic and she'll teach it."
-  );
-});
+bot.command(
+  "study",
+  ctx => {
+
+    sessions.set(
+      ctx.from.id,
+      {
+        mode: "ask"
+      }
+    );
+
+    ctx.reply(
+      "📚 STUDY ROOM\n\n" +
+
+      "Polity • History • Geography • Economy • Science • " +
+      "Bihar Special • Current Affairs\n\n" +
+
+      "Topic bhejo. NIVA padhayegi."
+    );
+
+  }
+);
 
 
 // ============================================================
-// DAILY CHALLENGE
+// DAILY
 // ============================================================
 
-bot.command("daily", ctx => {
-  ctx.reply(
-    "🔥 DAILY CHALLENGE\n\n" +
-    "5 questions. One topic. Zero excuses.\n\n" +
-    "Ready?",
-    Markup.inlineKeyboard([
-      [
-        Markup.button.callback(
-          "LET'S GO 🔥",
-          "quiz:start"
-        )
-      ]
-    ])
-  );
-});
+bot.command(
+  "daily",
+  ctx => {
+
+    ctx.reply(
+      "🔥 DAILY CHALLENGE\n\n" +
+
+      "5 questions.\n" +
+      "One topic.\n" +
+      "Zero excuses. 😏\n\n" +
+
+      "Ready?",
+
+      Markup.inlineKeyboard([
+        [
+          Markup.button.callback(
+            "LET'S GO 🔥",
+            "quiz:start"
+          )
+        ]
+      ])
+    );
+
+  }
+);
 
 
 // ============================================================
 // PROGRESS
 // ============================================================
 
-bot.command("progress", async ctx => {
-  try {
-    const s = await getStats(ctx.from.id);
+bot.command(
+  "progress",
+  async ctx => {
 
-    await ctx.replyWithMarkdown(
-      `📊 *YOUR NIVA REPORT*
+    try {
 
-Questions: *${s.questions}*
-Correct: *${s.correct}*
-Accuracy: *${s.accuracy}%*
-Revision Bank: *${s.mistakes.length}*
+      const s =
+        await getStats(
+          ctx.from.id
+        );
+
+      await ctx.reply(
+        `📊 YOUR NIVA REPORT
+
+Questions: ${s.questions}
+Correct: ${s.correct}
+Accuracy: ${s.accuracy}%
+Revision Bank: ${s.mistakes.length}
 
 ${
   s.questions
     ? "Consistency rakho. Accuracy ko next level le jaana hai. 🔥"
     : "Abhi dashboard khaali hai. Ek question toh karo, boss. 😏"
 }`
-    );
+      );
 
-  } catch (e) {
-    console.error("Progress error:", e);
+    } catch (error) {
 
-    ctx.reply(
-      "Progress load nahi ho paaya. Thodi der baad try karo."
-    );
+      console.error(
+        "Progress error:",
+        error
+      );
+
+      ctx.reply(
+        "Progress load nahi ho paaya. Thodi der baad try karo."
+      );
+
+    }
+
   }
-});
+);
 
 
 // ============================================================
 // REVISION
 // ============================================================
 
-bot.command("revision", async ctx => {
-  try {
-    const q = await getRevisionQuestion(ctx.from.id);
+bot.command(
+  "revision",
+  async ctx => {
 
-    if (!q) {
-      return ctx.reply(
-        "🧠 Revision Bank abhi khaali hai. " +
-        "Pehle kuch MCQs galat bhi hone do. 😏"
+    try {
+
+      const q =
+        await getRevisionQuestion(
+          ctx.from.id
+        );
+
+      if (!q) {
+
+        return ctx.reply(
+          "🧠 Revision Bank abhi khaali hai.\n\n" +
+          "Pehle kuch MCQs galat bhi hone do. 😏"
+        );
+
+      }
+
+      sessions.set(
+        ctx.from.id,
+        {
+          mode: "quiz",
+          q
+        }
       );
+
+      const buttons =
+        q.options.map(
+          (x, i) => [
+
+            Markup.button.callback(
+              `${String.fromCharCode(65 + i)}. ${x}`,
+              `ans:${i}`
+            )
+
+          ]
+        );
+
+      await ctx.reply(
+        `🧠 REVISION BANK\n\n${q.question}`,
+
+        Markup.inlineKeyboard(
+          buttons
+        )
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Revision error:",
+        error
+      );
+
+      ctx.reply(
+        "Revision Bank load nahi ho paaya."
+      );
+
     }
 
-    sessions.set(ctx.from.id, {
-      mode: "quiz",
-      q
-    });
-
-    const buttons = q.options.map((x, i) => [
-      Markup.button.callback(
-        `${String.fromCharCode(65 + i)}. ${x}`,
-        `ans:${i}`
-      )
-    ]);
-
-    await ctx.reply(
-      `🧠 *REVISION BANK*\n\n${q.question}`,
-      {
-        parse_mode: "Markdown",
-        ...Markup.inlineKeyboard(buttons)
-      }
-    );
-
-  } catch (e) {
-    console.error("Revision error:", e);
-
-    ctx.reply(
-      "Revision Bank load nahi ho paaya. Thodi der baad try karo."
-    );
   }
-});
+);
 
 
 // ============================================================
 // ROAST
 // ============================================================
 
-bot.command("roast", ctx => {
-  ctx.reply(
-    "🔥 Choose your NIVA roast level:",
-    Markup.inlineKeyboard([
-      [
-        Markup.button.callback(
-          "🙂 Friendly",
-          "roast:friendly"
-        )
-      ],
-      [
-        Markup.button.callback(
-          "😏 Savage",
-          "roast:savage"
-        )
-      ],
-      [
-        Markup.button.callback(
-          "☠️ NIVA Unleashed",
-          "roast:unleashed"
-        )
-      ]
-    ])
-  );
-});
+bot.command(
+  "roast",
+  ctx => {
+
+    ctx.reply(
+      "🔥 Choose your NIVA roast level:",
+
+      Markup.inlineKeyboard([
+
+        [
+          Markup.button.callback(
+            "🙂 Friendly",
+            "roast:friendly"
+          )
+        ],
+
+        [
+          Markup.button.callback(
+            "😏 Savage",
+            "roast:savage"
+          )
+        ],
+
+        [
+          Markup.button.callback(
+            "☠️ NIVA Unleashed",
+            "roast:unleashed"
+          )
+        ]
+
+      ])
+    );
+
+  }
+);
 
 
 // ============================================================
 // SETTINGS
 // ============================================================
 
-bot.command("settings", ctx => {
-  ctx.reply(
-    "⚙️ SETTINGS\n\n" +
-    "Use /roast to change NIVA's roast level."
-  );
-});
+bot.command(
+  "settings",
+  ctx => {
 
-
-// ============================================================
-// AI CHAT
-// ============================================================
-
-bot.on("text", async ctx => {
-  const id = ctx.from.id;
-  const text = ctx.message.text.trim();
-
-  const session = sessions.get(id);
-
-  try {
-    const u = await getUser(
-      id,
-      ctx.from.first_name || "Aspirant"
+    ctx.reply(
+      "⚙️ SETTINGS\n\n" +
+      "Use /roast to change NIVA's roast level."
     );
 
-    if (session?.mode === "ask" || !session) {
+  }
+);
 
-      await ctx.sendChatAction("typing");
 
-      const answer = await askNiva({
-        userId: id,
-        name: u.name,
-        message: text,
-        mode: "teacher"
-      });
+// ============================================================
+// HANDWRITTEN MAINS PHOTO
+// ============================================================
 
-      // CLEAN AI RESPONSE
-      // No inline menu attached.
-      await ctx.reply(answer);
+bot.on(
+  "photo",
+  async ctx => {
 
-      return;
+    const id =
+      ctx.from.id;
+
+    try {
+
+      const u =
+        await getUser(
+          id,
+          ctx.from.first_name ||
+          "Aspirant"
+        );
+
+
+      // If user has explicitly entered Mains mode
+      // evaluate the image as a Mains answer.
+
+      const session =
+        sessions.get(id);
+
+
+      if (session?.mode !== "mains") {
+
+        await ctx.reply(
+          "📸 Photo received.\n\n" +
+          "Agar ye handwritten Mains answer hai, pehle /mains bhejo, " +
+          "phir answer ka clear photo upload karo."
+        );
+
+        return;
+      }
+
+
+      await ctx.sendChatAction(
+        "typing"
+      );
+
+
+      const photos =
+        ctx.message.photo;
+
+
+      if (
+        !photos ||
+        !photos.length
+      ) {
+
+        return ctx.reply(
+          "📸 Image nahi mili. Dobara upload karo."
+        );
+
+      }
+
+
+      // Highest available Telegram resolution
+
+      const photo =
+        photos[
+          photos.length - 1
+        ];
+
+
+      const fileLink =
+        await ctx.telegram.getFileLink(
+          photo.file_id
+        );
+
+
+      const imageResponse =
+        await fetch(
+          fileLink.href
+        );
+
+
+      if (
+        !imageResponse.ok
+      ) {
+
+        throw new Error(
+          "Could not download Telegram image."
+        );
+
+      }
+
+
+      const imageBuffer =
+        Buffer.from(
+          await imageResponse.arrayBuffer()
+        );
+
+
+      const imageBase64 =
+        imageBuffer.toString(
+          "base64"
+        );
+
+
+      await ctx.reply(
+        "📸 Answer mil gaya.\n\n" +
+        "NIVA handwriting padh rahi hai aur answer evaluate kar rahi hai... ✍️🧠"
+      );
+
+
+      const evaluation =
+        await evaluateMainsAnswer({
+
+          userId: id,
+
+          name: u.name,
+
+          imageBase64,
+
+          mimeType: "image/jpeg"
+
+        });
+
+
+      sessions.delete(id);
+
+
+      await ctx.reply(
+        evaluation
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Mains image evaluation error:",
+        error
+      );
+
+
+      await ctx.reply(
+        "📸 Answer image read karne mein problem aa gayi.\n\n" +
+        "Clear photo, proper lighting aur poora answer frame mein bhejo."
+      );
+
     }
 
-  } catch (e) {
-    console.error("NIVA AI error:", e);
-
-    await ctx.reply(
-      "NIVA ka backend thoda chai break par chala gaya 😭.\n" +
-      "Thodi der baad try karo."
-    );
-
-    return;
   }
-});
+);
+
+
+// ============================================================
+// NORMAL TEXT / AI
+// ============================================================
+
+bot.on(
+  "text",
+  async ctx => {
+
+    const id =
+      ctx.from.id;
+
+    const text =
+      ctx.message.text.trim();
+
+
+    // Commands are handled by Telegraf
+    // before reaching this handler.
+
+    const session =
+      sessions.get(id);
+
+
+    try {
+
+      const u =
+        await getUser(
+          id,
+          ctx.from.first_name ||
+          "Aspirant"
+        );
+
+
+      // --------------------------------------------------------
+      // MAINS MODE
+      // --------------------------------------------------------
+
+      if (
+        session?.mode === "mains"
+      ) {
+
+        await ctx.reply(
+          "✍️ Mains mode active hai.\n\n" +
+          "Apne handwritten answer ka clear photo bhejo. 📸"
+        );
+
+        return;
+      }
+
+
+      // --------------------------------------------------------
+      // ASK MODE
+      // --------------------------------------------------------
+
+      if (
+        session?.mode === "ask" ||
+        !session
+      ) {
+
+        await ctx.sendChatAction(
+          "typing"
+        );
+
+
+        const answer =
+          await askNiva({
+
+            userId: id,
+
+            name: u.name,
+
+            message: text,
+
+            mode: "teacher"
+
+          });
+
+
+        // IMPORTANT:
+        // NO MENU AFTER AI RESPONSE.
+
+        await ctx.reply(
+          answer
+        );
+
+
+        return;
+      }
+
+
+    } catch (error) {
+
+      console.error(
+        "NIVA AI error:",
+        error
+      );
+
+
+      await ctx.reply(
+        "NIVA ka backend thoda chai break par chala gaya 😭\n\n" +
+        "Thodi der baad try karo."
+      );
+
+    }
+
+  }
+);
 
 
 // ============================================================
 // DAILY QUIZ START
 // ============================================================
 
-bot.action("quiz:start", async ctx => {
-  await ctx.answerCbQuery();
+bot.action(
+  "quiz:start",
+  async ctx => {
 
-  await startQuiz(ctx);
-});
+    await ctx.answerCbQuery();
+
+    await startQuiz(ctx);
+
+  }
+);
 
 
 // ============================================================
-// ROAST LEVEL CALLBACK
+// ROAST CALLBACK
 // ============================================================
 
 bot.action(
   /^roast:(friendly|savage|unleashed)$/,
   async ctx => {
 
-    const level = ctx.match[1];
-
     try {
+
+      const level =
+        ctx.match[1];
+
+
       await updateUser(
         ctx.from.id,
         {
@@ -404,23 +841,36 @@ bot.action(
         }
       );
 
+
       await ctx.answerCbQuery(
         "Roast mode updated."
       );
 
+
       ctx.reply(
+
         level === "unleashed"
-          ? "☠️ NIVA Unleashed activated. Tumne khud choose kiya hai. 😂"
+
+          ? "☠️ NIVA Unleashed activated.\nTumne khud choose kiya hai. 😂"
+
           : `Roast level: ${level}.`
+
       );
 
-    } catch (e) {
-      console.error("Roast update error:", e);
+
+    } catch (error) {
+
+      console.error(
+        "Roast update error:",
+        error
+      );
 
       ctx.reply(
         "Roast level update nahi ho paaya."
       );
+
     }
+
   }
 );
 
@@ -430,16 +880,22 @@ bot.action(
 // ============================================================
 
 async function startQuiz(ctx) {
+
   try {
 
-    const q = await getQuestion();
+    const q =
+      await getQuestion();
+
 
     if (!q) {
+
       return ctx.reply(
-        "🎯 Quiz database abhi connected nahi hai. " +
+        "🎯 Quiz database abhi connected nahi hai.\n\n" +
         "Admin ko question bank import karna hoga."
       );
+
     }
+
 
     sessions.set(
       ctx.from.id,
@@ -449,28 +905,45 @@ async function startQuiz(ctx) {
       }
     );
 
-    const buttons = q.options.map((x, i) => [
-      Markup.button.callback(
-        `${String.fromCharCode(65 + i)}. ${x}`,
-        `ans:${i}`
-      )
-    ]);
+
+    const buttons =
+      q.options.map(
+        (x, i) => [
+
+          Markup.button.callback(
+            `${String.fromCharCode(65 + i)}. ${x}`,
+            `ans:${i}`
+          )
+
+        ]
+      );
+
 
     await ctx.reply(
-      `🎯 *${q.subject} — ${q.topic}*\n\n${q.q}`,
-      {
-        parse_mode: "Markdown",
-        ...Markup.inlineKeyboard(buttons)
-      }
+
+      `🎯 ${q.subject} — ${q.topic}\n\n${q.q}`,
+
+      Markup.inlineKeyboard(
+        buttons
+      )
+
     );
 
-  } catch (e) {
-    console.error("Quiz start error:", e);
+
+  } catch (error) {
+
+    console.error(
+      "Quiz start error:",
+      error
+    );
+
 
     ctx.reply(
       "Quiz start nahi ho paaya. Thodi der baad try karo."
     );
+
   }
+
 }
 
 
@@ -478,131 +951,201 @@ async function startQuiz(ctx) {
 // QUIZ ANSWER
 // ============================================================
 
-bot.action(/^ans:(\d)$/, async ctx => {
+bot.action(
+  /^ans:(\d)$/,
+  async ctx => {
 
-  try {
+    try {
 
-    const session = sessions.get(ctx.from.id);
+      const session =
+        sessions.get(
+          ctx.from.id
+        );
 
-    if (!session?.q) {
-      return ctx.answerCbQuery(
-        "Quiz expired. Start again."
-      );
-    }
 
-    const choice = Number(ctx.match[1]);
+      if (
+        !session?.q
+      ) {
 
-    const q = session.q;
+        return ctx.answerCbQuery(
+          "Quiz expired. Start again."
+        );
 
-    const correct = choice === q.answer;
-
-    const u = await addAttempt(
-      ctx.from.id,
-      {
-        questionId: q.id,
-        topic: q.topic,
-        choice,
-        correct
       }
-    );
 
-    await ctx.answerCbQuery(
-      correct
-        ? "Correct! 🔥"
-        : "Not quite."
-    );
 
-    let msg;
+      const choice =
+        Number(
+          ctx.match[1]
+        );
 
-    if (correct) {
 
-      msg =
-        `✅ *Correct!*\n\n` +
-        `${q.explanation}`;
+      const q =
+        session.q;
 
-    } else {
 
-      const roastLevel =
-        u.roast_level || "friendly";
+      const correct =
+        choice === q.answer;
 
-      const roastList =
-        ROASTS[roastLevel] || ROASTS.friendly;
 
-      const roast =
-        roastList[
-          Math.floor(
-            Math.random() * roastList.length
-          )
-        ];
+      const u =
+        await addAttempt(
+          ctx.from.id,
+          {
+            questionId: q.id,
+            topic: q.topic,
+            choice,
+            correct
+          }
+        );
 
-      msg =
-        `❌ *Not correct.*\n\n` +
-        `${roast}\n\n` +
-        `*Correct answer:* ` +
-        `${String.fromCharCode(65 + q.answer)}. ` +
-        `${q.options[q.answer]}\n\n` +
-        `${q.explanation}`;
+
+      await ctx.answerCbQuery(
+        correct
+          ? "Correct! 🔥"
+          : "Not quite."
+      );
+
+
+      let msg;
+
+
+      if (correct) {
+
+        msg =
+          `✅ Correct!\n\n` +
+          `${q.explanation}`;
+
+      } else {
+
+        const roastLevel =
+          u.roast_level ||
+          "friendly";
+
+
+        const roastList =
+          ROASTS[
+            roastLevel
+          ] ||
+          ROASTS.friendly;
+
+
+        const roast =
+          roastList[
+            Math.floor(
+              Math.random() *
+              roastList.length
+            )
+          ];
+
+
+        msg =
+          `❌ Not correct.\n\n` +
+          `${roast}\n\n` +
+
+          `Correct answer: ` +
+          `${String.fromCharCode(
+            65 + q.answer
+          )}. ` +
+          `${q.options[q.answer]}\n\n` +
+
+          `${q.explanation}`;
+
+      }
+
+
+      sessions.delete(
+        ctx.from.id
+      );
+
+
+      // NO MENU AFTER QUIZ
+
+      await ctx.reply(
+        msg +
+        `\n\n📊 Accuracy: ${
+          u.questions
+            ? (
+                100 *
+                u.correct /
+                u.questions
+              ).toFixed(1)
+            : 0
+        }%`
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Quiz answer error:",
+        error
+      );
+
+
+      ctx.reply(
+        "Answer save karne mein problem aa gayi. 😅"
+      );
+
     }
 
-    sessions.delete(ctx.from.id);
-
-    // NO MENU AFTER QUIZ
-    await ctx.replyWithMarkdown(
-      msg +
-      `\n\n📊 Accuracy: ${
-        u.questions
-          ? (100 * u.correct / u.questions).toFixed(1)
-          : 0
-      }%`
-    );
-
-  } catch (e) {
-
-    console.error("Quiz answer error:", e);
-
-    ctx.reply(
-      "Answer save karne mein problem aa gayi. 😅"
-    );
   }
-});
+);
 
 
 // ============================================================
 // GLOBAL ERROR HANDLER
 // ============================================================
 
-bot.catch(err => {
-  console.error("NIVA error:", err);
-});
+bot.catch(
+  error => {
+
+    console.error(
+      "NIVA error:",
+      error
+    );
+
+  }
+);
 
 
 // ============================================================
-// START BOT + TELEGRAM MENU
+// START BOT
 // ============================================================
 
 async function startBot() {
 
   try {
 
-    // Register commands for Telegram's native ☰ Menu
     await bot.telegram.setMyCommands(
       nativeMenuCommands
     );
 
-    console.log("NIVA native menu configured.");
 
-  } catch (e) {
+    console.log(
+      "NIVA native menu configured."
+    );
+
+
+  } catch (error) {
 
     console.error(
       "Telegram menu setup error:",
-      e
+      error
     );
+
   }
+
 
   bot.launch();
 
-  console.log("NIVA is online.");
+
+  console.log(
+    "NIVA is online."
+  );
+
 }
+
 
 startBot();
 
@@ -613,12 +1156,14 @@ startBot();
 
 process.once(
   "SIGINT",
-  () => bot.stop("SIGINT")
+  () =>
+    bot.stop("SIGINT")
 );
 
 process.once(
   "SIGTERM",
-  () => bot.stop("SIGTERM")
+  () =>
+    bot.stop("SIGTERM")
 );
 
 
@@ -627,7 +1172,9 @@ process.once(
 // ============================================================
 
 const PORT =
-  process.env.PORT || 3000;
+  process.env.PORT ||
+  3000;
+
 
 http.createServer(
   (req, res) => {
@@ -643,6 +1190,7 @@ http.createServer(
     res.end(
       "NIVA is online."
     );
+
   }
 ).listen(
   PORT,
