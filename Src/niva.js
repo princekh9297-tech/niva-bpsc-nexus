@@ -2,7 +2,7 @@ import { NIVA_SYSTEM } from "./personality.js";
 import { getStats } from "./storage.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-3.6-flash";
+const GEMINI_MODEL = "gemini-3.5-flash";
 
 export async function askNiva({ userId, name, message, mode = "teacher" }) {
   const stats = await getStats(userId);
