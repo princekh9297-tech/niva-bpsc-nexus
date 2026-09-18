@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: niva-bpsc-nexus
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5.6
+      - key: ADMIN_IDS
+        sync: false
+      - key: CHANNEL_USERNAME
+        sync: false
+      - key: BOT_USERNAME
+        sync: false
