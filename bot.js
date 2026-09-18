@@ -1377,15 +1377,20 @@ startBot();
 
 
 // ============================================================
-// SHUTDOWN
+// SAFE SHUTDOWN
 // ============================================================
 
-process.once(
-  "SIGINT",
-  () =>
-    bot.stop("SIGINT")
-);
+function safeStop(signal) {
+  try {
+    bot.stop(signal);
+    console.log(`NIVA stopped safely: ${signal}`);
+  } catch (error) {
+    console.log(`NIVA shutdown completed: ${signal}`);
+  }
+}
 
+process.once("SIGINT", () => safeStop("SIGINT"));
+process.once("SIGTERM", () => safeStop("SIGTERM"));
 process.once(
   "SIGTERM",
   () =>
