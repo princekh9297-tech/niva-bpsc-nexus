@@ -2,10 +2,10 @@ import { NIVA_SYSTEM } from "./personality.js";
 import { getStats } from "./storage.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+const GEMINI_MODEL = "gemini-3.6-flash";
 
 export async function askNiva({ userId, name, message, mode = "teacher" }) {
-  const stats = getStats(userId);
+  const stats = await getStats(userId);
 
   const context = `
 Student name: ${name}
@@ -15,47 +15,49 @@ Roast level: ${stats.roastLevel}
 Mode: ${mode}
 `;
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [
-            {
-              text: NIVA_SYSTEM + "\n" + context
-            }
-          ]
-        },
-        contents: [
+  const url =
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent` +
+    `?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      systemInstruction: {
+        parts: [
           {
-            role: "user",
-            parts: [
-              {
-                text: message
-              }
-            ]
+            text: NIVA_SYSTEM + "\n" + context
           }
         ]
-      })
-    }
-  );
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: message
+            }
+          ]
+        }
+      ]
+    })
+  });
 
   const data = await response.json();
 
   if (!response.ok) {
-    console.error("Gemini API error:", data);
-    throw new Error(data?.error?.message || "Gemini API request failed");
+    console.error("Gemini API error:", JSON.stringify(data, null, 2));
+    throw new Error(
+      data?.error?.message || "Gemini API request failed"
+    );
   }
 
-  const answer =
-    data?.candidates?.[0]?.content?.parts
-      ?.map(part => part.text || "")
-      .join("")
-      .trim();
+  const answer = data?.candidates?.[0]?.content?.parts
+    ?.map(part => part.text || "")
+    .join("")
+    .trim();
 
   return (
     answer ||
