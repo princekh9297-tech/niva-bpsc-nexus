@@ -130,18 +130,11 @@ Use plain text only.
 
 DO NOT use Markdown.
 
-DO NOT use:
-*
-**
-_
-__
-#
-##
-###
-`
+Do not use Markdown symbols.
+
 Do not use code blocks.
 
-Do not use backticks.
+Do not use programming syntax.
 
 Do not use JSON.
 
