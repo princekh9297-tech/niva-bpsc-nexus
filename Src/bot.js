@@ -27,9 +27,13 @@ bot.start(async ctx => {
   ctx.replyWithMarkdown(welcome(u.name), menu);
 });
 
-\nbot.command("admin", async ctx => {\n  if(!isAdmin(ctx.from.id)) return ctx.reply("Access denied.");\n  ctx.reply("👑 NIVA ADMIN\n\nSend your question bank as JSON/CSV in the next build, or use Supabase Table Editor for now.\n\nDatabase tables: profiles, questions, attempts, revision_bank.");\n});\n\nbot.command("help", ctx => ctx.replyWithMarkdown(
-`*NIVA Commands*\n\n/start — Main menu\n/ask — Ask NIVA anything\n/practice — Practice MCQs\n/progress — Your stats\n/roast — Change roast level\n\nTip: Simply type your question anytime.`
-));
+bot.command("admin", async ctx => {
+  if (!isAdmin(ctx.from.id)) return ctx.reply("Access denied.");
+  return ctx.reply(
+    "*NIVA Commands*\n\n/start - Main menu\n/ask - Ask NIVA anything\n/practice - Practice MCQs\n/progress - Your progress\n/revision - Revision Bank\n/roast - Choose roast level",
+    { parse_mode: "Markdown" }
+  );
+});
 
 bot.command("ask", ctx => {
   sessions.set(ctx.from.id, {mode:"ask"});
