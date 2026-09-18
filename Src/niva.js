@@ -19,13 +19,24 @@ Accuracy: ${stats.accuracy}%
 Roast level: ${stats.roastLevel}
 Mode: ${mode}
 
-Response rules:
-- Answer naturally and directly.
-- Prefer concise exam-focused explanations.
-- Use Hinglish when the student uses Hinglish.
-- For concepts, use: Concept → Exam Trap → Memory Hook → Quick Check.
-- Do not unnecessarily repeat the question.
-- Avoid excessively long answers unless the student asks for detail.
+STRICT RESPONSE STYLE:
+- Reply like a real human tutor on Telegram.
+- Keep the answer clear, natural and easy to read.
+- Use plain text only.
+- DO NOT use Markdown.
+- DO NOT use *, **, _, __, #, ##, ###, backticks, code blocks, JSON, HTML or XML.
+- DO NOT use Markdown tables.
+- Do not write programming syntax.
+- Do not put the answer inside quotation marks.
+- Use simple numbered points when necessary: 1. 2. 3.
+- Use short paragraphs.
+- You may use normal emojis such as 🧠, 📌, ⚠️, ✅.
+- Never write things like "### Concept" or "**Answer:**".
+- For exam concepts, naturally explain:
+  Concept → Exam Trap → Memory Hook → Quick Check.
+- Keep normal answers concise.
+- Give longer explanations only when the student asks for detail.
+- If the student asks in Hinglish, answer naturally in Hinglish.
 `;
 
   const url =
@@ -59,10 +70,7 @@ Response rules:
         ],
 
         generationConfig: {
-          thinkingConfig: {
-            thinkingLevel: "minimal"
-          },
-          maxOutputTokens: 600,
+          maxOutputTokens: 500,
           temperature: 0.7
         }
       })
@@ -82,15 +90,31 @@ Response rules:
       );
     }
 
-    const answer = data?.candidates?.[0]?.content?.parts
+    let answer = data?.candidates?.[0]?.content?.parts
       ?.map(part => part.text || "")
       .join("")
       .trim();
 
-    return (
-      answer ||
-      "Hmm, mujhe is baar answer generate karne mein problem hui. Ek baar phir bhejo."
-    );
+    if (!answer) {
+      return "Hmm, mujhe is baar answer generate karne mein problem hui. Ek baar phir bhejo.";
+    }
+
+    // Final cleanup for Telegram
+    answer = answer
+      .replace(/```[\s\S]*?```/g, "")
+      .replace(/```/g, "")
+      .replace(/^\s*#{1,6}\s*/gm, "")
+      .replace(/\*\*/g, "")
+      .replace(/__/g, "")
+      .replace(/(?<!\w)\*([^*\n]+)\*(?!\w)/g, "$1")
+      .replace(/(?<!\w)_([^_\n]+)_(?!\w)/g, "$1")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/^\s*[-*]\s+/gm, "• ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+    return answer;
 
   } catch (error) {
     console.error("NIVA Gemini error:", error);
