@@ -5,7 +5,7 @@ import { askNiva } from "./niva.js";
 import { getQuestion } from "./quiz.js";
 import { ROASTS } from "./personality.js";
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 const adminIds = new Set((process.env.ADMIN_IDS || "").split(",").map(x=>x.trim()).filter(Boolean));
 const sessions = new Map();
 const isAdmin = id => adminIds.has(String(id));
