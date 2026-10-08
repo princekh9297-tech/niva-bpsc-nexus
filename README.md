@@ -37,3 +37,17 @@ Do not put your Supabase service-role key or Telegram bot token into frontend co
 
 ## NIVA personality
 NIVA is a tutor first, friend second, roaster third. Roasting targets mistakes, never personal/sensitive traits. She adapts Hinglish naturally and prioritizes verified exam facts.
+
+
+## NIVA Core v3
+The bot now has a deterministic local personality engine (`src/niva-core.js`). Ordinary greetings, affection, flirting, roasting, humour, motivation, mode changes and short reactions are handled without an LLM API call.
+
+Available modes: study, roast, fun, love, flirt, mature, caring, strict, random.
+Intensity: soft, normal, bold, intense.
+
+Use `/mode` and `/intensity` to configure a user's personality. Complex academic messages fall back to the existing Groq text layer; Mains image evaluation remains vision/AI powered.
+
+Run `node --check src/bot.js`, `node --check src/niva.js`, and `node --check src/niva-core.js` before deployment.
+
+## v3 deployment note
+The current source uses Telegram + Supabase + Groq. Configure the environment variables from `render.yaml`. NIVA Core handles supported casual/personality interactions locally; complex academic requests use the Groq fallback and Mains image evaluation remains vision-powered.

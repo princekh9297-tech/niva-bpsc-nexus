@@ -42,3 +42,9 @@ create table if not exists revision_bank (
 
 create index if not exists attempts_user_idx on attempts(telegram_id, created_at desc);
 create index if not exists revision_user_idx on revision_bank(telegram_id, last_wrong_at desc);
+
+
+-- NIVA Core v3 personality preferences
+alter table profiles add column if not exists niva_mode text default 'study';
+alter table profiles add column if not exists niva_level text default 'normal';
+alter table profiles add column if not exists niva_mood text default 'neutral';
