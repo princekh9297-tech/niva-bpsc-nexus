@@ -1,0 +1,31 @@
+{
+  "version": "5.1.0",
+  "mode": "pure-fun-local",
+  "ai_apis": false,
+  "academic_features": false,
+  "flat_root": true,
+  "files": [
+    ".env.example",
+    ".gitignore",
+    "README.md",
+    "bot.js",
+    "contextEngine.js",
+    "conversationMemory.js",
+    "engine.js",
+    "intentDetector.js",
+    "package.json",
+    "personality.js",
+    "render.yaml",
+    "responseEngine.js",
+    "responses.js",
+    "storage.js",
+    "toneDetector.js"
+  ],
+  "performance": {
+    "in_memory_user_cache": true,
+    "per_message_disk_io": false,
+    "debounced_persistence_ms": 1500,
+    "graceful_shutdown_flush": true,
+    "ai_apis": false
+  }
+}
